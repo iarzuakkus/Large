@@ -1,0 +1,25 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Reposu klonla
+      uses: actions/checkout@v3
+
+    - name: Node.js kur
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Bağımlılıkları yükle
+      run: npm install
+
+    - name: Uygulamayı build et
+      run: npm run build
