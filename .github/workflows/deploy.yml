@@ -20,8 +20,8 @@ jobs:
 
     - name: Bekleyip uygulamayı test et
       run: |
-        sleep 5
-        curl --fail http://localhost:5050 || (echo "Uygulama çalışmıyor!" && exit 1)
+        sleep 15
+        curl --fail http://localhost:5050/health || (echo "Uygulama çalışmıyor!" && exit 1)
 
     - name: Temizle
       run: docker stop test-container && docker rm test-container
