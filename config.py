@@ -1,5 +1,5 @@
 class Config:
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:12345@localhost/large-blog"
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:12345@host.docker.internal/large-blog"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = "gizli-bir-key"
 

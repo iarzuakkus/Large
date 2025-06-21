@@ -1,27 +1,27 @@
-name: Flask Backend CI
+name: Dockerized Flask CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build:
+  dockerized-ci:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Reposu klonla
-        uses: actions/checkout@v3
+    - name: Reposu klonla
+      uses: actions/checkout@v3
 
-      - name: Python kur
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+    - name: Docker imajını oluştur
+      run: docker build -t large-app .
 
-      - name: pip güncelle ve bağımlılıkları yükle
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Docker container’ı başlat (test)
+      run: docker run -d -p 5050:5000 --name test-container large-app
 
-      - name: CI tamamlandı
-        run: echo "Flask projesi CI/CD adımı başarılı!"
+    - name: Bekleyip uygulamayı test et
+      run: |
+        sleep 5
+        curl --fail http://localhost:5050 || (echo "Uygulama çalışmıyor!" && exit 1)
+
+    - name: Temizle
+      run: docker stop test-container && docker rm test-container
