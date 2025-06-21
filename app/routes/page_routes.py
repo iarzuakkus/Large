@@ -69,3 +69,7 @@ def search():
         Post.title.ilike(f"%{query}%") | Post.content.ilike(f"%{query}%")
     ).all()
     return render_template("search_results.html", posts=posts, query=query)
+
+@app.route("/health")
+def health():
+    return "OK", 200
