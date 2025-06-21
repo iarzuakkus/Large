@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, session, flash
 from werkzeug.security import check_password_hash, generate_password_hash
-from sqlalchemy import text
+from sqlalchemy import text, func
 from app.models import User, Topic, Post, Like, Save, Comment
 from app import db
+from config import redis_client
+import json
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api")
 
@@ -189,6 +191,12 @@ def api_comment_post(post_id):
     db.session.add(comment)
     db.session.commit()
 
+    # ✅ Redis'teki yorum sayısını artır
+    redis_client.zincrby("comment_ranking", 1, f"post:{post_id}")
+
+    # ✅ Önbellekteki en çok yorum alanlar listesini sil (yeni sıralama için)
+    redis_client.delete("top_commented_posts")
+
     return jsonify({
         "message": "Yorum başarıyla eklendi.",
         "comment": {
@@ -197,3 +205,37 @@ def api_comment_post(post_id):
             "created_at": comment.created_at.strftime("%Y-%m-%d %H:%M")
         }
     }), 201
+
+
+@auth_bp.route("/top-commented-posts", methods=["GET"])
+def get_top_commented_posts():
+    # Önce Redis'ten kontrol et
+    cached = redis_client.get("top_commented_posts")
+    if cached:
+        try:
+            return jsonify(json.loads(cached)), 200
+        except:
+            pass  # Redis bozuksa devam et
+
+    # Redis'te yoksa veritabanından çek
+    top_posts = (
+        Post.query
+        .outerjoin(Comment)
+        .group_by(Post.id)
+        .order_by(func.count(Comment.id).desc())
+        .limit(5)
+        .all()
+    )
+
+    result = []
+    for post in top_posts:
+        result.append({
+            "id": post.id,
+            "title": post.title,
+            "comment_count": len(post.comments)
+        })
+
+    # Redis'e yaz - 10 dakika süreyle sakla
+    redis_client.setex("top_commented_posts", 600, json.dumps(result))
+
+    return jsonify(result), 200

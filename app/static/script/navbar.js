@@ -25,8 +25,44 @@ function handleLiveSearch() {
 
   if (!input || !resultsContainer) return;
 
-  input.addEventListener("focus", () => {
+  input.addEventListener("focus", async () => {
     resultsContainer.classList.add("show");
+    resultsContainer.innerHTML = "<p>Loading top posts...</p>";
+
+    try {
+      const res = await fetch("/api/top-commented-posts");
+      const topPosts = await res.json();
+
+      resultsContainer.innerHTML = "";
+
+      if (topPosts.length) {
+        const topHeader = document.createElement("h4");
+        topHeader.textContent = "Top Posts";
+        resultsContainer.appendChild(topHeader);
+
+        topPosts.forEach(post => {
+          const div = document.createElement("div");
+          div.className = "post-card";
+          div.style.cursor = "pointer";
+          div.innerHTML = `
+            <div class="post-content">
+              <h3 class="post-title">${post.title}</h3>
+              <div class="post-meta">
+                <span>${post.comment_count} yorum</span>
+              </div>
+            </div>
+          `;
+          div.addEventListener("click", () => {
+            window.location.href = `/posts/${post.id}`;
+          });
+          resultsContainer.appendChild(div);
+        });
+      } else {
+        resultsContainer.innerHTML = "<p>No popular posts found.</p>";
+      }
+    } catch {
+      resultsContainer.innerHTML = "<p>Top posts failed to load.</p>";
+    }
   });
 
   document.addEventListener("click", (e) => {

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app.models import User, Topic, Post, Comment
 from app import db
+from config import redis_client
 
 page_bp = Blueprint("pages", __name__)
 
@@ -73,3 +74,4 @@ def search():
 @page_bp.route("/health")
 def health():
     return "OK", 200
+
