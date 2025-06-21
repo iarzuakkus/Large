@@ -70,6 +70,6 @@ def search():
     ).all()
     return render_template("search_results.html", posts=posts, query=query)
 
-@app.route("/health")
+@page_bp.route("/health")
 def health():
     return "OK", 200
