@@ -7,6 +7,8 @@ on:
 jobs:
   dockerized-ci:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_ACTIONS: true  # Bu satır CI ortamında çalıştığımızı belirtir
 
     steps:
     - name: Reposu klonla
