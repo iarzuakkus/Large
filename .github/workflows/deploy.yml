@@ -39,7 +39,7 @@ jobs:
     - name: Bekleyip uygulamayı test et
       run: |
         sleep 15
-        curl --fail http://test-container:5000/health || (echo "Uygulama çalışmıyor!" && exit 1)
+        curl --fail http://localhost:5000/health || (echo "Uygulama çalışmıyor!" && exit 1)
 
     - name: Temizle
       run: |
