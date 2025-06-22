@@ -45,6 +45,11 @@ def login():
         return jsonify({"message": "Giriş başarılı.", "user_id": user.id}), 200
     return jsonify({"error": "Geçersiz e-posta veya şifre."}), 401
 
+@auth_bp.route("/logout", methods=["POST"])
+def logout():
+    session.pop("user_id", None)  # Kullanıcı oturumunu sil
+    return jsonify({"message": "Başarıyla çıkış yapıldı."}), 200
+
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
