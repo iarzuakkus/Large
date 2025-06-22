@@ -8,3 +8,5 @@ if __name__ == "__main__":
 #docker-compose down
 
 #docker-compose up --build
+
+#http://localhost:15672 -guest

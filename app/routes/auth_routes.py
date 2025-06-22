@@ -5,6 +5,21 @@ from app.models import User, Topic, Post, Like, Save, Comment
 from app import db
 from config import redis_client
 import json
+import pika
+
+def publish_comment_event(data):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+    channel = connection.channel()
+    channel.queue_declare(queue='comment_events')  # Kuyruğu tanımla
+    channel.basic_publish(exchange='', routing_key='comment_events', body=json.dumps(data))
+    connection.close()
+    
+def publish_post_event(data):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+    channel = connection.channel()
+    channel.queue_declare(queue='post_events')
+    channel.basic_publish(exchange='', routing_key='post_events', body=json.dumps(data))
+    connection.close()
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api")
 
@@ -123,6 +138,14 @@ def create_post():
     db.session.add(new_post)
     db.session.commit()
 
+    # ✅ Post oluşturulduktan sonra RabbitMQ mesajı gönder
+    publish_post_event({
+        "type": "post_created",
+        "post_id": new_post.id,
+        "user_id": session["user_id"],
+        "title": new_post.title
+    })
+
     return jsonify({"message": "Post başarıyla oluşturuldu.", "post_id": new_post.id}), 201
 
 @auth_bp.route("/like-post", methods=["POST"])
@@ -191,11 +214,17 @@ def api_comment_post(post_id):
     db.session.add(comment)
     db.session.commit()
 
-    # ✅ Redis'teki yorum sayısını artır
+    # ✅ Redis güncellemeleri
     redis_client.zincrby("comment_ranking", 1, f"post:{post_id}")
-
-    # ✅ Önbellekteki en çok yorum alanlar listesini sil (yeni sıralama için)
     redis_client.delete("top_commented_posts")
+
+    # ✅ RabbitMQ mesajı gönder
+    publish_comment_event({
+        "type": "comment_created",
+        "comment_id": comment.id,
+        "post_id": post_id,
+        "user_id": session["user_id"]
+    })
 
     return jsonify({
         "message": "Yorum başarıyla eklendi.",
@@ -239,3 +268,6 @@ def get_top_commented_posts():
     redis_client.setex("top_commented_posts", 600, json.dumps(result))
 
     return jsonify(result), 200
+
+
+

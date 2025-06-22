@@ -17,6 +17,12 @@ jobs:
           - 6379:6379
         options: --name test-redis
 
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+        options: --name test-rabbit
+
     steps:
     - name: Reposu klonla
       uses: actions/checkout@v3
@@ -24,13 +30,18 @@ jobs:
     - name: Docker imajını oluştur
       run: docker build -t large-app .
 
-    - name: Docker container’ı başlat (test)
-      run: docker run -d --network=host -p 5050:5000 --name test-container large-app
+    - name: Docker ağı oluştur
+      run: docker network create test-net
+
+    - name: Container’ı başlat (test)
+      run: docker run -d --name test-container --network test-net -p 5050:5000 large-app
 
     - name: Bekleyip uygulamayı test et
       run: |
         sleep 15
-        curl --fail http://localhost:5000/health || (echo "Uygulama çalışmıyor!" && exit 1)
+        curl --fail http://test-container:5000/health || (echo "Uygulama çalışmıyor!" && exit 1)
 
     - name: Temizle
-      run: docker stop test-container && docker rm test-container
+      run: |
+        docker stop test-container && docker rm test-container
+        docker network rm test-net

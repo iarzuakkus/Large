@@ -10,6 +10,7 @@ services:
       - GITHUB_ACTIONS=false
     depends_on:
       - redis
+      - rabbitmq
     restart: always
 
   redis:
@@ -17,4 +18,12 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # AMQP (Python koduyla haberleşme)
+      - "15672:15672"    # Web UI (tarayıcıdan yönetim arayüzü)
     restart: always
